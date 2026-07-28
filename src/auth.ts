@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs"
 import { authConfig } from "./auth.config"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "jwt" },
   ...authConfig,
   providers: [
