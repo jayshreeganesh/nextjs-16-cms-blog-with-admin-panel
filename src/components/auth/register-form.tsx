@@ -35,7 +35,7 @@ export const RegisterForm = () => {
           if (data.error) {
             toast.error(data.error)
           } else {
-            toast.success(data.success)
+            toast.success(data.success as string)
             router.push("/auth/login")
           }
         })

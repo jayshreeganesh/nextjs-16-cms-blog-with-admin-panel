@@ -29,7 +29,7 @@ export const ResetForm = () => {
           if (data?.error) {
             toast.error(data.error)
           } else {
-            toast.success(data?.success)
+            toast.success(data?.success as string)
           }
         })
     })
