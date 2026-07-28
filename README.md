@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment Variables
+
+Before running the project locally, you must set up your environment variables. 
+
+1. Copy the `.env.example` file and rename it to `.env`:
+```bash
+cp .env.example .env
+```
+2. Open the `.env` file and generate a random `AUTH_SECRET` (or run `npx auth secret` to generate one).
+
 ## Getting Started
 
 First, run the development server:
