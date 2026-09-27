@@ -64,7 +64,7 @@ async function main() {
         content: faker.lorem.paragraphs(5),
         excerpt: faker.lorem.sentence(),
         published: faker.datatype.boolean(),
-        image: faker.image.urlLoremFlickr({ category: 'nature' }),
+        image: `https://picsum.photos/seed/${faker.string.alphanumeric(5)}/800/400`,
         authorId: admin.id,
         categoryId: categories[Math.floor(Math.random() * categories.length)].id,
         tags: {

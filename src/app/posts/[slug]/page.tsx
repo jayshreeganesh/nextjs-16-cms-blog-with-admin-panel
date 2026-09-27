@@ -31,7 +31,11 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         </div>
 
         {post.image && (
-          <img src={post.image} alt={post.title} className="w-full h-64 object-cover rounded-lg mb-8" />
+          <img 
+            src={post.image.includes('loremflickr') ? `https://picsum.photos/seed/${post.id}/800/400` : post.image} 
+            alt={post.title} 
+            className="w-full h-64 object-cover rounded-lg mb-8" 
+          />
         )}
 
         <div className="prose lg:prose-xl max-w-none text-gray-800">

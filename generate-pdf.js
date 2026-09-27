@@ -1,8 +1,61 @@
 const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
+
+function getBase64Image(file) {
+  try {
+    const bitmap = fs.readFileSync(file);
+    return `data:image/png;base64,${bitmap.toString('base64')}`;
+  } catch(e) {
+    return "";
+  }
+}
 
 (async () => {
+  console.log("Starting browser to capture screenshots from Vercel...");
   const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-  const page = await browser.newPage();
+  
+  // 1. Capture Screenshots
+  const capturePage = await browser.newPage();
+  await capturePage.setViewport({ width: 1440, height: 900 });
+  const baseUrl = 'https://nextjs-16-cms-blog-with-admin-panel.vercel.app';
+
+  try {
+    console.log("Capturing Home Page...");
+    await capturePage.goto(baseUrl, { waitUntil: 'networkidle2' });
+    await capturePage.screenshot({ path: 'public/shot-home.png' });
+
+    console.log("Logging into Admin...");
+    await capturePage.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle2' });
+    await capturePage.type('input[name="email"]', 'admin@example.com');
+    await capturePage.type('input[name="password"]', 'password123');
+    await capturePage.click('button[type="submit"]');
+    
+    // Wait for the redirect to admin page
+    await capturePage.waitForNavigation({ waitUntil: 'networkidle2' });
+    
+    // Go specifically to posts dashboard
+    await capturePage.goto(`${baseUrl}/admin/posts`, { waitUntil: 'networkidle2' });
+    console.log("Capturing Admin Dashboard...");
+    await capturePage.screenshot({ path: 'public/shot-admin.png' });
+
+    console.log("Capturing Editor...");
+    await capturePage.goto(`${baseUrl}/admin/posts/new`, { waitUntil: 'networkidle2' });
+    await capturePage.screenshot({ path: 'public/shot-editor.png' });
+    
+  } catch (error) {
+    console.error("Screenshot capture failed. Note: The Vercel app might be sleeping or deploying.", error);
+  }
+  await capturePage.close();
+
+  // 2. Load images as base64
+  console.log("Generating PDF...");
+  const homeImg = getBase64Image('public/shot-home.png');
+  const adminImg = getBase64Image('public/shot-admin.png');
+  const editorImg = getBase64Image('public/shot-editor.png');
+
+  // 3. Generate PDF
+  const pdfPage = await browser.newPage();
   
   const htmlContent = `
     <!DOCTYPE html>
@@ -13,100 +66,82 @@ const puppeteer = require('puppeteer');
       .slide { 
         width: 1080px; height: 1080px; 
         background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); 
-        margin: 0; padding: 100px; box-sizing: border-box; 
-        display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; 
+        margin: 0; padding: 60px; box-sizing: border-box; 
+        display: flex; flex-direction: column; justify-content: flex-start; align-items: center; text-align: center; 
         page-break-after: always;
       }
-      h1 { font-size: 80px; color: #111827; margin-bottom: 20px; font-weight: 800; line-height: 1.2; }
-      h2 { font-size: 65px; color: #1f2937; margin-bottom: 60px; font-weight: 700; }
-      p, li { font-size: 45px; color: #4b5563; line-height: 1.6; text-align: left; }
-      ul { width: 90%; margin-top: 20px; }
-      li { margin-bottom: 35px; }
+      .slide-title { justify-content: center; }
+      h1 { font-size: 70px; color: #111827; margin-bottom: 20px; font-weight: 800; line-height: 1.2; }
+      h2 { font-size: 55px; color: #1f2937; margin-bottom: 30px; font-weight: 700; margin-top: 20px; }
+      p { font-size: 35px; color: #4b5563; line-height: 1.5; }
       .highlight { color: #4f46e5; }
-      .footer { font-size: 35px; color: #9ca3af; margin-top: auto; font-weight: 600; }
-      .box { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); width: 100%; border: 1px solid #e5e7eb; }
+      .screenshot-container { 
+        width: 100%; flex-grow: 1; display: flex; align-items: center; justify-content: center; 
+        background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+        border: 2px solid #e5e7eb; margin-top: 20px; padding: 10px;
+      }
+      img.screenshot { width: 100%; max-height: 700px; object-fit: contain; object-position: top center; border-radius: 10px; }
+      .footer { font-size: 25px; color: #9ca3af; margin-top: 30px; font-weight: 600; }
     </style>
     </head>
     <body>
-      <div class="slide">
+      <!-- Slide 1 -->
+      <div class="slide slide-title">
         <h1>Building a Custom CMS & Blog with <span class="highlight">Next.js 16 🚀</span></h1>
-        <p style="text-align: center; max-width: 800px; margin-top: 40px; font-size: 50px;">Complete with a secure Admin Panel, Prisma ORM, and modern web architecture.</p>
+        <p style="text-align: center; max-width: 800px; margin-top: 20px;">Complete with a secure Admin Panel, Prisma ORM, and modern web architecture.</p>
         <div class="footer">Swipe to learn more ➡️</div>
       </div>
       
+      <!-- Slide 2 -->
       <div class="slide">
-        <h2>The Problem with Traditional CMS</h2>
-        <div class="box">
-            <ul>
-            <li>Sometimes you don't need a heavy, bloated platform.</li>
-            <li>You want complete control over your database schemas and UI.</li>
-            <li>You want to leverage the latest Next.js 16 and React 19 features for maximum performance.</li>
-            </ul>
+        <h2>Beautiful Public Blog 🌐</h2>
+        <div class="screenshot-container">
+            ${homeImg ? `<img src="${homeImg}" class="screenshot"/>` : '<p>Screenshot Failed</p>'}
         </div>
+        <div class="footer">Fully responsive frontend built with Tailwind CSS v4</div>
       </div>
       
+      <!-- Slide 3 -->
       <div class="slide">
-        <h2>Under the Hood 🛠️</h2>
-        <div class="box">
-            <ul>
-            <li><b>Framework:</b> Next.js 16 & React 19</li>
-            <li><b>Styling:</b> Tailwind CSS v4</li>
-            <li><b>Database & ORM:</b> Prisma ORM</li>
-            <li><b>Auth:</b> NextAuth.js (Auth.js v5)</li>
-            <li><b>Validation:</b> Zod + React Hook Form</li>
-            </ul>
+        <h2>Secure Admin Dashboard 🔐</h2>
+        <div class="screenshot-container">
+            ${adminImg ? `<img src="${adminImg}" class="screenshot"/>` : '<p>Screenshot Failed</p>'}
         </div>
+        <div class="footer">Role-based authentication powered by NextAuth.js (v5)</div>
       </div>
       
+      <!-- Slide 4 -->
       <div class="slide">
-        <h2>Seamless Content Management</h2>
-        <div class="box">
-            <ul>
-            <li>Secure login and registration system.</li>
-            <li>Intuitive dashboard to Create, Read, Update, and Delete posts.</li>
-            <li>Real-time cache revalidation when posts are published.</li>
-            </ul>
+        <h2>Seamless Content Editor 📝</h2>
+        <div class="screenshot-container">
+            ${editorImg ? `<img src="${editorImg}" class="screenshot"/>` : '<p>Screenshot Failed</p>'}
         </div>
+        <div class="footer">Form validation with Zod & React Hook Form</div>
       </div>
       
-      <div class="slide">
-        <h2>Built for Scale ⚡</h2>
-        <div class="box">
-            <ul>
-            <li>Full TypeScript support for type safety.</li>
-            <li>Robust end-to-end testing integrated using Playwright.</li>
-            <li>Database seeding with Faker.js for local development.</li>
-            </ul>
-        </div>
-      </div>
-      
-      <div class="slide">
+      <!-- Slide 5 -->
+      <div class="slide slide-title">
         <h2>Check out the Code! 💻</h2>
-        <div class="box">
-            <ul>
-            <li>The project is completely <span class="highlight">Open Source</span>.</li>
-            <li><b>Live Demo:</b><br/> <span style="font-size: 40px; color: #4f46e5;">nextjs-16-cms-blog-with-admin-panel.vercel.app</span></li>
-            <li><b>Demo Login:</b><br/> <span style="font-size: 40px;">admin@example.com / password123</span></li>
-            </ul>
+        <div style="background: white; padding: 40px; border-radius: 20px; width: 80%; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 40px;">
+            <p style="text-align: center; margin-bottom: 20px;">The project is completely <span class="highlight">Open Source</span>.</p>
+            <p style="font-size: 30px; text-align: center; margin-bottom: 10px;"><b>Live Demo:</b><br/> <span style="color: #4f46e5;">nextjs-16-cms-blog-with-admin-panel.vercel.app</span></p>
+            <p style="font-size: 30px; text-align: center;"><b>Demo Login:</b><br/> <span>admin@example.com / password123</span></p>
         </div>
       </div>
     </body>
     </html>
   `;
   
-  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+  await pdfPage.setContent(htmlContent, { waitUntil: 'networkidle0' });
+  await pdfPage.setViewport({ width: 1080, height: 1080 });
   
-  // Set the viewport to exactly 1080x1080
-  await page.setViewport({ width: 1080, height: 1080 });
-  
-  await page.pdf({
+  await pdfPage.pdf({
     path: 'public/linkedin-carousel.pdf',
     width: '1080px',
     height: '1080px',
     printBackground: true,
-    pageRanges: '1-6',
   });
   
   await browser.close();
-  console.log("PDF generated successfully at public/linkedin-carousel.pdf!");
+  console.log("PDF successfully generated with Live Screenshots at public/linkedin-carousel.pdf!");
 })();
