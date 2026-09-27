@@ -13,6 +13,9 @@ export const deletePost = async (id: string) => {
 
   await prisma.post.delete({ where: { id } })
   revalidatePath("/admin/posts")
+  revalidatePath("/")
+  // Note: Can't easily revalidate the specific post slug here without fetching it first, 
+  // but revalidating the home page is the most critical part.
 }
 
 const PostSchema = z.object({
@@ -44,6 +47,8 @@ export const createPost = async (values: z.infer<typeof PostSchema>) => {
       },
     })
     revalidatePath("/admin/posts")
+    revalidatePath("/")
+    revalidatePath(`/posts/${slug}`)
     return { success: "Post created" }
   } catch (e) {
     return { error: "Failed to create post" }
@@ -71,6 +76,8 @@ export const updatePost = async (id: string, values: z.infer<typeof PostSchema>)
       },
     })
     revalidatePath("/admin/posts")
+    revalidatePath("/")
+    revalidatePath(`/posts/${slug}`)
     return { success: "Post updated" }
   } catch (e) {
     return { error: "Failed to update post" }
